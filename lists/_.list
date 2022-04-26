@@ -1,9 +1,12 @@
+antibody github.com/getantibody/antibody@latest
+cue cuelang.org/go/cmd/cue@latest
 hugo github.com/gohugoio/hugo@latest
 kind sigs.k8s.io/kind@latest
 minio github.com/minio/minio@latest
 mc github.com/minio/mc@latest
 mkcert filippo.io/mkcert@latest
 stern github.com/stern/stern@latest
+weed github.com/chrislusf/seaweedfs/weed@latest
 yq github.com/mikefarah/yq/v4@latest
 nats github.com/nats-io/natscli/nats@latest
 gh github.com/cli/cli/cmd/gh@latest broken due to replace directives in go.mod
