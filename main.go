@@ -74,7 +74,7 @@ func main() {
 	cmd := exec.Command("go", run...)
 	cmd.Stdin, cmd.Stdout, cmd.Stderr = os.Stdin, os.Stdout, os.Stderr
 	if err := cmd.Run(); err != nil {
-		fmt.Fprintf(os.Stderr, "va: %v", err)
+		fmt.Fprintf(os.Stderr, "va: %v\n", err)
 		os.Exit(1)
 	}
 }
