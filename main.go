@@ -35,7 +35,12 @@ func main() {
 		}
 		sort.Strings(keys)
 		for _, k := range keys {
-			fmt.Fprintf(w, "%s\t=>\t%s\t(%s)\n", links[k].Short, links[k].Pkg, links[k].Desc)
+			desc := links[k].Desc
+			if desc != "" {
+				// Make descriptions prettier.
+				desc = "(" + desc + ")"
+			}
+			fmt.Fprintf(w, "%s\t=>\t%s %s\n", links[k].Short, links[k].Pkg, desc)
 		}
 		w.Flush()
 		fmt.Fprint(os.Stderr, "\n")
@@ -125,15 +130,17 @@ func fsToLinks(f fs.FS) (map[string]Link, error) {
 
 			// Skip empty links.
 			if link == (Link{}) {
-				return nil
+				continue
 			}
 
+			// Rewrite the short name with any prefix.
+			link.Short = name + link.Short
+
 			// Ensure the link has not already been seen, then add it.
-			fullName := name + link.Short
-			if _, ok := links[fullName]; ok {
-				return fmt.Errorf("link %s already exists, file: %s", fullName, path)
+			if _, ok := links[link.Short]; ok {
+				return fmt.Errorf("link %s already exists, file: %s", link.Short, path)
 			}
-			links[fullName] = link
+			links[link.Short] = link
 		}
 		return nil
 	}
