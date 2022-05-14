@@ -9,9 +9,9 @@ stern github.com/stern/stern@latest
 weed github.com/chrislusf/seaweedfs/weed@latest
 yq github.com/mikefarah/yq/v4@latest
 nats github.com/nats-io/natscli/nats@latest
-gh github.com/cli/cli/cmd/gh@latest broken due to replace directives in go.mod
+gh github.com/cli/cli/cmd/gh@latest
 helm github.com/helm/helm/cmd/helm@latest broken due to strange kubernetes revision numbering
 helmfile github.com/helmfile/helmfile@latest broken due to go.mod module name not matching
-istioctl github.com/istio/istio/istioctl/cmd/istioctl@latest broken due to replace directives in go.mod
-kubectl github.com/kubernetes/kubernetes/cmd/kubectl@latest broken due to replace directives in go.mod
-terraform github.com/hashicorp/terraform@latest broken due to replace directives in go.mod
+istioctl github.com/istio/istio/istioctl/cmd/istioctl@latest
+kubectl github.com/kubernetes/kubernetes/cmd/kubectl@latest broken due to strange package naming
+terraform github.com/hashicorp/terraform@latest
