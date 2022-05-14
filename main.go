@@ -68,15 +68,30 @@ func main() {
 		os.Exit(1)
 	}
 
-	// With a valid module, download it, then build it.
+	// Construct the command line, and run it.
+	run := []string{"run", mod}
+	run = append(run, os.Args[2:]...)
+	cmdRun := exec.Command("go", run...)
+	cmdRun.Stdin, cmdRun.Stdout, cmdRun.Stderr = os.Stdin, os.Stdout, os.Stderr
+	if err := cmdRun.Run(); err == nil {
+		// Everything ran fine, so quit now.
+		// Using "go run" masks the exit code of the application
+		// so we are fine just stomping over it with "0" here.
+		os.Exit(0)
+	}
+
+	// If we got this far, using "go run" did not work, but we are not
+	// ready to give up just yet! We shall download the module, build it,
+	// and then run it in a temporary location.
+	fmt.Fprintf(os.Stderr, "\nva: Using \"go run\" failed, trying fallback mechanism.\n\n")
 	toolDir, err := Download(mod)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "download: %v\n", err)
+		fmt.Fprintf(os.Stderr, "va: download: %v\n", err)
 		os.Exit(1)
 	}
 	tool, err := Build(toolDir)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "error: %v\n", err)
+		fmt.Fprintf(os.Stderr, "va: build: %v\n", err)
 		os.Exit(1)
 	}
 	defer os.Remove(tool) // Remove the binary once we are done with it.
@@ -86,7 +101,7 @@ func main() {
 	cmd.Stdin, cmd.Stdout, cmd.Stderr = os.Stdin, os.Stdout, os.Stderr
 	if err := cmd.Run(); err != nil {
 		if _, ok := err.(*exec.ExitError); !ok {
-			fmt.Fprintf(os.Stderr, "va: %v\n", err)
+			fmt.Fprintf(os.Stderr, "va: built: %v\n", err)
 			os.Exit(cmd.ProcessState.ExitCode())
 		}
 	}
