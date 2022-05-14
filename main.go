@@ -48,34 +48,47 @@ func main() {
 	}
 
 	// Lookup the path to see if it is a shortened link.
-	pkg := os.Args[1]
-	pkgPath := strings.Split(pkg, "@")
-	if link, ok := links[pkgPath[0]]; ok {
-		pkgLink := strings.Split(link.Pkg, "@")
-		pkgPath[0] = pkgLink[0]
+	mod := os.Args[1]
+	modPath := strings.Split(mod, "@")
+	if link, ok := links[modPath[0]]; ok {
+		modLink := strings.Split(link.Pkg, "@")
+		modPath[0] = modLink[0]
 		// No version specified? Take the version from the link. The
 		// user-specified version is always preferred over the
 		// version specified in the shortened version.
-		if len(pkgPath) == 1 {
-			pkgPath = append(pkgPath, pkgLink[1])
+		if len(modPath) == 1 {
+			modPath = append(modPath, modLink[1])
 		}
 	}
-	pkg = strings.Join(pkgPath, "@")
+	mod = strings.Join(modPath, "@")
 
 	// Ensure we actually have a valid module path.
-	if !validatePkg(pkg) {
-		fmt.Fprintf(os.Stderr, "invalid pkg: %s (must be path@version)\n", pkg)
+	if !validateMod(mod) {
+		fmt.Fprintf(os.Stderr, "invalid pkg: %s (must be path@version)\n", mod)
 		os.Exit(1)
 	}
 
-	// Construct the command line, and run it.
-	run := []string{"run", pkg}
-	run = append(run, os.Args[2:]...)
-	cmd := exec.Command("go", run...)
+	// With a valid module, download it, then build it.
+	toolDir, err := Download(mod)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "download: %v\n", err)
+		os.Exit(1)
+	}
+	tool, err := Build(toolDir)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "error: %v\n", err)
+		os.Exit(1)
+	}
+	defer os.Remove(tool) // Remove the binary once we are done with it.
+
+	// Run the freshly built binary.
+	cmd := exec.Command(tool, os.Args[2:]...)
 	cmd.Stdin, cmd.Stdout, cmd.Stderr = os.Stdin, os.Stdout, os.Stderr
 	if err := cmd.Run(); err != nil {
-		fmt.Fprintf(os.Stderr, "va: %v\n", err)
-		os.Exit(1)
+		if _, ok := err.(*exec.ExitError); !ok {
+			fmt.Fprintf(os.Stderr, "va: %v\n", err)
+			os.Exit(cmd.ProcessState.ExitCode())
+		}
 	}
 }
 
@@ -162,8 +175,8 @@ func lineToLink(line string) (Link, error) {
 		return Link{}, errors.New("bad line")
 	}
 	short, pkg, desc := split[0], split[1], strings.Join(split[2:], " ")
-	if !validateShort(short) || !validatePkg(pkg) {
-		return Link{}, fmt.Errorf("bad package: %s %s", short, pkg)
+	if !validateShort(short) || !validateMod(pkg) {
+		return Link{}, fmt.Errorf("bad module: %s %s", short, pkg)
 	}
 	return Link{
 		Short: short,
@@ -184,9 +197,9 @@ func validateShort(short string) bool {
 	return reShort.MatchString(short)
 }
 
-// validatePkg takes a package name and ensures it is a valid Go module name.
-func validatePkg(pkg string) bool {
-	split := strings.Split(pkg, "@")
+// validateMod takes a module name and ensures it is a valid Go module name.
+func validateMod(mod string) bool {
+	split := strings.Split(mod, "@")
 	if len(split) != 2 {
 		// For module mode, must specify a version.
 		return false
